@@ -1,4 +1,4 @@
-import { validateRecord, mergeRecords, validateResult, mergeResults, onlineResults, applyOnlineResults, scoutAwards, parseBackup, backup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
+import { validateRecord, mergeRecords, validateResult, mergeResults, scoutAwards, parseBackup, backup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
 
 const $ = selector => document.querySelector(selector);
 const STORAGE = "rebuilt-scouting-records-v1";
@@ -11,7 +11,7 @@ let qrIndex = 0;
 let scanState = null;
 let stream = null;
 let scanSession = 0;
-let summarySort = { category: "event", direction: "ascending" };
+let summarySort = { category: "team", direction: "ascending" };
 
 function message(text, error = false) {
   $("#message").textContent = text;
@@ -43,13 +43,13 @@ function render() {
     row.className = "record";
     const description = document.createElement("p");
     const title = document.createElement("strong");
-    title.textContent = `${record.event} · Match ${record.match} · Team ${record.team} (${record.alliance})`;
+    title.textContent = `${record.event ? `${record.event} · ` : ""}Match ${record.match} · Team ${record.team} (${record.alliance})`;
     description.append(title, document.createElement("br"), `${record.scout} — auto fuel ${record.autoFuel}, teleop fuel ${record.teleopFuel}, tower ${record.teleopClimb}`);
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "secondary";
     remove.textContent = "Delete";
-    remove.setAttribute("aria-label", `Delete ${record.event} match ${record.match} team ${record.team}`);
+    remove.setAttribute("aria-label", `Delete match ${record.match} team ${record.team}`);
     remove.addEventListener("click", () => {
       if (!confirm("Delete this record from this device? Export a backup first if needed.")) return;
       try { save(records.filter(r => r.id !== record.id)); message("Record deleted."); }
@@ -64,7 +64,7 @@ function render() {
   $("#summary-empty").hidden = groups.length > 0;
   for (const g of groups) {
     const tr = document.createElement("tr");
-    for (const value of [g.event, g.team, g.matches, (g.auto / g.matches).toFixed(1), (g.teleop / g.matches).toFixed(1), `${g.climbed} / ${g.matches}`]) {
+    for (const value of [g.team, g.matches, (g.auto / g.matches).toFixed(1), (g.teleop / g.matches).toFixed(1), `${g.climbed} / ${g.matches}`]) {
       const td = document.createElement("td");
       td.textContent = value;
       tr.append(td);
@@ -72,6 +72,19 @@ function render() {
     body.append(tr);
   }
   const awards = scoutAwards(records, results);
+  const winners = new Map();
+  const conflicts = new Set();
+  for (const result of results) {
+    if (winners.has(result.match) && winners.get(result.match) !== result.winner) conflicts.add(result.match);
+    else winners.set(result.match, result.winner);
+  }
+  $("#result-conflicts").hidden = !conflicts.size;
+  $("#result-conflicts").textContent = conflicts.size
+    ? `Conflicting older results for match(es) ${[...conflicts].sort((a, b) => a - b).join(", ")} are excluded from accuracy. Save the correct result to resolve each conflict.`
+    : "";
+  const oldEvents = new Set([...records, ...results].filter(item => item.event).map(item => item.event.trim().toLowerCase()));
+  $("#legacy-warning").hidden = oldEvents.size < 2;
+  $("#legacy-warning").textContent = oldEvents.size < 2 ? "" : "Older data contains multiple event names. All records now count as one event; export a backup and clear this device before scouting a new event.";
   for (const [kind, rows] of Object.entries(awards)) {
     const list = $(`#${kind}-awards`);
     list.replaceChildren();
@@ -91,12 +104,12 @@ function render() {
     const row = document.createElement("div");
     row.className = "record";
     const text = document.createElement("p");
-    text.textContent = `${result.event} · Match ${result.match}: ${result.winner}`;
+    text.textContent = `${result.event ? `${result.event} · ` : ""}Match ${result.match}: ${result.winner}`;
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "secondary";
     remove.textContent = "Delete";
-    remove.setAttribute("aria-label", `Delete ${result.event} match ${result.match} result`);
+    remove.setAttribute("aria-label", `Delete ${result.event ? `${result.event} ` : ""}match ${result.match} result`);
     remove.addEventListener("click", () => {
       if (!confirm("Delete this match result?")) return;
       try { save(records, results.filter(item => item !== result)); message("Result deleted."); }
@@ -113,7 +126,7 @@ try {
     const parsed = JSON.parse(state);
     if (!Array.isArray(parsed.records) || !Array.isArray(parsed.results)) throw new Error("Stored data is invalid.");
     records = mergeRecords([], parsed.records).records;
-    results = mergeResults([], parsed.results);
+    results = parsed.results.map(validateResult);
   } else {
     const stored = localStorage.getItem(STORAGE);
     const parsed = stored === null ? [] : JSON.parse(stored);
@@ -131,7 +144,7 @@ document.querySelectorAll(".sort-button").forEach(button => {
     const category = button.dataset.sort;
     const direction = category === summarySort.category
       ? (summarySort.direction === "ascending" ? "descending" : "ascending")
-      : (category === "event" || category === "team" ? "ascending" : "descending");
+      : (category === "team" ? "ascending" : "descending");
     summarySort = { category, direction };
     document.querySelectorAll(".sort-button").forEach(heading => {
       const active = heading === button;
@@ -149,11 +162,10 @@ $("#result-form").addEventListener("submit", event => {
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
     const result = validateResult({ ...data, match: Number(data.match) });
-    const remaining = results.filter(item => !(item.event.trim().toLowerCase() === result.event.toLowerCase() && item.match === result.match));
+    const remaining = results.filter(item => item.match !== result.match);
     save(records, [...remaining, result]);
     form.reset();
-    form.elements.event.value = result.event;
-    message(`Saved result for ${result.event}, match ${result.match}.`);
+    message(`Saved result for match ${result.match}.`);
   } catch (error) { message(`Could not save result: ${error.message}`, true); }
 });
 
@@ -161,61 +173,15 @@ $("#scout-form").addEventListener("submit", event => {
   event.preventDefault();
   try {
     const data = Object.fromEntries(new FormData(event.currentTarget));
-    for (const name of ["event", "scout", "notes"]) data[name] = data[name].trim();
+    for (const name of ["scout", "notes"]) data[name] = data[name].trim();
     for (const name of ["team", "match", "autoFuel", "teleopFuel"]) data[name] = Number(data[name]);
     const record = validateRecord({ ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
     save([...records, record]);
-    const { event: eventName, scout } = record;
+    const { scout } = record;
     event.currentTarget.reset();
-    event.currentTarget.elements.event.value = eventName;
     event.currentTarget.elements.scout.value = scout;
     message(`Saved match ${record.match} for team ${record.team} on this device.`);
   } catch (error) { message(`Could not save record: ${error.message}`, true); }
-});
-
-$("#online-results-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const status = $("#online-status");
-  const button = form.querySelector("button");
-  const eventName = form.elements.event.value.trim();
-  const eventKey = form.elements.eventKey.value.trim().toLowerCase();
-  if (!storageAvailable || !eventName || !/^2026[a-z0-9]+$/.test(eventKey)) {
-    status.textContent = "Enter a valid event name and 2026 event key, and ensure local storage is available.";
-    return;
-  }
-  button.disabled = true;
-  status.textContent = "Checking Statbotics...";
-  try {
-    const fetchJson = async url => {
-      const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      if (!response.ok) throw new Error(`Statbotics returned HTTP ${response.status}. Check the event key and try again.`);
-      return response.json();
-    };
-    const eventData = await fetchJson(`https://api.statbotics.io/v3/event/${encodeURIComponent(eventKey)}`);
-    if (!eventData || eventData.key !== eventKey || typeof eventData.name !== "string" || !eventData.name.trim()) {
-      throw new Error("Event key not found in Statbotics.");
-    }
-    const matches = [];
-    for (let offset = 0; ; offset += 1000) {
-      const page = await fetchJson(`https://api.statbotics.io/v3/matches?event=${encodeURIComponent(eventKey)}&limit=1000&offset=${offset}`);
-      if (!Array.isArray(page) || page.length > 1000) throw new Error("Statbotics returned an invalid match list.");
-      matches.push(...page);
-      if (page.length < 1000) break;
-      if (offset >= 9000) throw new Error("Too many matches returned; no results were changed.");
-    }
-    const online = onlineResults(matches, eventKey, eventName);
-    if (online.results.length && !confirm(`Use ${online.results.length} qualification results from ${eventData.name} (${eventKey}) for "${eventName}"? This replaces conflicting saved results.`)) {
-      status.textContent = "Online update cancelled; no results were changed.";
-      return;
-    }
-    if (online.results.length) save(records, applyOnlineResults(results, online.results));
-    status.textContent = `Updated ${online.results.length} completed qualification result(s). ${online.unavailable} completed match(es) had no winner available.`;
-  } catch (error) {
-    status.textContent = `Online check failed; no results were changed: ${error.message}. You can still enter results manually.`;
-  } finally {
-    button.disabled = false;
-  }
 });
 
 function download(content, name, type) {
@@ -234,6 +200,19 @@ $("#export").addEventListener("click", () => {
 $("#csv").addEventListener("click", () => {
   if (!storageAvailable) return message("Cannot export: local data could not be read.", true);
   download(csv(records), "rebuilt-scouting.csv", "text/csv;charset=utf-8");
+});
+$("#clear-data").addEventListener("click", () => {
+  if (!storageAvailable) return message("Cannot clear: local data could not be read.", true);
+  if (!confirm("Clear all scouting records and match results on this device? Export and verify a backup first. This cannot be undone.")) return;
+  try {
+    save([], []);
+    localStorage.removeItem(STORAGE);
+    stopScan();
+    $("#qr-display").hidden = true;
+    qrParts = [];
+    message("All scouting records and match results cleared from this device.");
+  }
+  catch (error) { message(`Could not clear data: ${error.message}`, true); }
 });
 $("#import").addEventListener("change", async event => {
   try {

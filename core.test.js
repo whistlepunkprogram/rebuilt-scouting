@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validateRecord, mergeRecords, mergeResults, onlineResults, applyOnlineResults, scoutAwards, backup, parseBackup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
+import { validateRecord, mergeRecords, mergeResults, validateResult, scoutAwards, backup, parseBackup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
 
 const record = {
   id: "one", event: "Regional", scout: "Scout", notes: "Good robot", createdAt: "2026-03-01T12:00:00.000Z",
@@ -25,9 +25,9 @@ test("backup imports deduplicate and reject conflicts without changing originals
   assert.equal(existing.length, 1);
 });
 
-test("summaries group event case and team, and CSV protects spreadsheet formulas", () => {
+test("summaries group by team regardless of legacy event and CSV protects spreadsheet formulas", () => {
   const records = [record, { ...record, id: "two", event: "regional", autoFuel: 4, notes: "=1+1", teleopClimb: "None" }];
-  assert.deepEqual(summarize(records), [{ event: "Regional", team: 123, matches: 2, auto: 6, teleop: 60, climbed: 1 }]);
+  assert.deepEqual(summarize(records), [{ team: 123, matches: 2, auto: 6, teleop: 60, climbed: 1 }]);
   assert.match(csv(records), /"'=1\+1"/);
 });
 
@@ -66,7 +66,8 @@ test("legacy backups and new backups preserve predictions and match results", ()
   const results = [{ event: "Regional", match: 1, winner: "Red" }];
   const restored = parseBackup(backup([predicted], results));
   assert.deepEqual(mergeRecords([], restored.records).records, [predicted]);
-  assert.deepEqual(mergeResults([], restored.results), results);
+  assert.deepEqual(mergeResults([], restored.results), [validateResult(results[0])]);
+  assert.deepEqual(parseBackup(JSON.stringify({ format: "rebuilt-scouting", version: 2, records: [predicted], results })), { records: [predicted], results });
   assert.throws(() => validateRecord({ ...record, prediction: "Tie" }));
   assert.throws(() => mergeResults(results, [{ event: "regional", match: 1, winner: "Blue" }]), /Conflicting/);
 });
@@ -100,19 +101,15 @@ test("QR transfer includes results", () => {
   assert.equal(data.records[0].prediction, "Blue");
 });
 
-test("online qualification results replace matching manual results without changing unrelated or upcoming results", () => {
-  const matches = [
-    { event: "2026mnmi", comp_level: "qm", status: "Completed", match_number: 1, result: { winner: "blue" } },
-    { event: "2026mnmi", comp_level: "qm", status: "Completed", match_number: 2, result: { winner: "tie" } },
-    { event: "2026mnmi", comp_level: "qm", status: "Upcoming", match_number: 3, result: { winner: null } },
-    { event: "2026mnmi", comp_level: "qm", status: "Completed", match_number: 4, result: { winner: null } },
-    { event: "2026mnmi", comp_level: "sf", status: "Completed", match_number: 1, result: { winner: "red" } }
-  ];
-  const existing = [{ event: "Regional", match: 1, winner: "Red" }, { event: "Regional", match: 3, winner: "Red" }, { event: "Other", match: 1, winner: "Red" }];
-  const parsed = onlineResults(matches, "2026mnmi", "Regional");
-  assert.equal(parsed.unavailable, 1);
-  assert.deepEqual(applyOnlineResults(existing, parsed.results), [existing[1], existing[2], { event: "Regional", match: 1, winner: "Blue" }, { event: "Regional", match: 2, winner: "Tie" }]);
-  assert.equal(existing[0].winner, "Red");
-  assert.throws(() => onlineResults([{ ...matches[0], event: "2026wrong" }], "2026mnmi", "Regional"), /unexpected/);
-  assert.throws(() => onlineResults([{ ...matches[0], result: { winner: "unknown" } }], "2026mnmi", "Regional"), /unrecognized/);
+test("event-free records and results work with legacy data and conflicting legacy results are unjudged", () => {
+  const { event, ...newRecord } = record;
+  const predicted = { ...newRecord, prediction: "Red" };
+  assert.deepEqual(validateRecord(predicted), predicted);
+  assert.deepEqual(validateResult({ match: 1, winner: "Red" }), { match: 1, winner: "Red" });
+  assert.equal(mergeRecords([record], [record]).skipped, 1);
+  const results = [{ event: "One", match: 1, winner: "Red" }, { event: "Two", match: 1, winner: "Blue" }];
+  assert.equal(scoutAwards([predicted], results).accuracy.length, 0);
+  assert.equal(scoutAwards([predicted], [{ match: 1, winner: "Red" }]).accuracy[0].correct, 1);
+  assert.throws(() => mergeResults([], results), /Conflicting/);
+  assert.deepEqual(mergeResults([{ match: 1, winner: "Red" }], [{ event: "Old", match: 1, winner: "Red" }]), [{ match: 1, winner: "Red" }]);
 });

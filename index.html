@@ -13,15 +13,15 @@
   <header><div class="wrap"><img class="team-logo" src="robojacks.png" alt="RoboJacks" width="1358" height="396"><h1>RoboJacks REBUILT Scouting App</h1><p>Offline match scouting &amp; captain compilation</p><p id="offline-status" role="status">Preparing offline access…</p></div></header>
   <main class="wrap">
     <div id="message" role="status" aria-live="polite"></div>
+    <p id="legacy-warning" role="status" hidden></p>
     <nav aria-label="App sections">
-      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#captain">Captain summary</a><a href="#awards">SCOUT AWARDS</a><a href="#transfer">Transfer</a>
+      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#captain">Captain summary</a><a href="#awards">Scout awards</a><a href="#transfer">Transfer</a>
     </nav>
     <section id="scout">
       <h2>Scout a match</h2>
       <p>Fuel counts are estimates for this robot. Count fuel observed entering an active hub.</p>
       <form id="scout-form">
         <div class="grid">
-          <label>Event name <input name="event" maxlength="80" required placeholder="e.g. North Star Regional"></label>
           <label>Scout name <input name="scout" maxlength="80" required></label>
           <label>Team number <input name="team" type="number" inputmode="numeric" min="1" max="99999" required></label>
           <label>Match number <input name="match" type="number" inputmode="numeric" min="1" max="99999" required></label>
@@ -51,49 +51,41 @@
     </section>
     <section id="captain">
       <h2>Captain summary</h2>
-      <p>Grouped by event and team. Averages are per submitted record; duplicate observations of a match are not combined. Select a column heading to sort; select it again to reverse the order. Teleop climbs sorts by success rate.</p>
-      <div class="table-wrap"><table><thead><tr><th scope="col" aria-sort="ascending"><button type="button" class="sort-button" data-sort="event">Event <span aria-hidden="true">▲</span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="team">Team <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="matches">Records <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="auto">Avg auto fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="teleop">Avg teleop fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="climbed">Teleop climbs <span aria-hidden="true"></span></button></th></tr></thead><tbody id="summary"></tbody></table></div>
+      <p>Grouped by team. Averages are per submitted record; duplicate observations of a match are not combined. Select a column heading to sort; select it again to reverse the order. Teleop climbs sorts by success rate.</p>
+      <div class="table-wrap"><table><thead><tr><th scope="col" aria-sort="ascending"><button type="button" class="sort-button" data-sort="team">Team <span aria-hidden="true">▲</span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="matches">Records <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="auto">Avg auto fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="teleop">Avg teleop fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="climbed">Teleop climbs <span aria-hidden="true"></span></button></th></tr></thead><tbody id="summary"></tbody></table></div>
       <p id="summary-empty">No records yet.</p>
     </section>
     <section id="awards">
-      <h2>SCOUT AWARDS</h2>
-      <p>One match per scout and event counts. The first submitted record's prediction is used; matches without predictions or with tie results are excluded from accuracy. Ties in accuracy are broken by more judged predictions, then scout name. Match-count ties are broken by scout name.</p>
+      <h2>Scout awards</h2>
+      <p>One match per scout counts. The first submitted record's prediction is used; matches without predictions or with tie results are excluded from accuracy. Ties in accuracy are broken by more judged predictions, then scout name. Match-count ties are broken by scout name.</p>
+      <p id="result-conflicts" role="status" hidden></p>
       <div class="grid">
         <div><h3>Top prediction accuracy</h3><ol id="accuracy-awards"></ol><p id="accuracy-empty">No judged predictions yet.</p></div>
         <div><h3>Most matches scouted</h3><ol id="participation-awards"></ol><p id="participation-empty">No matches scouted yet.</p></div>
       </div>
       <h3>Enter match result</h3>
-      <p>On the captain's device, enter the final result using the same event name and match number used by scouts. Saving again updates a result.</p>
+      <p>On the captain's device, enter the final result using the match number used by scouts. Saving again updates a result.</p>
       <form id="result-form">
         <div class="grid">
-          <label>Event name <input name="event" maxlength="80" required></label>
           <label>Match number <input name="match" type="number" inputmode="numeric" min="1" max="99999" required></label>
           <label>Result <select name="winner" required><option value="">Select result</option><option>Red</option><option>Blue</option><option>Tie</option></select></label>
         </div>
         <button type="submit">Save result</button>
       </form>
-      <h3>Check results online</h3>
-      <p>While online, fetch completed qualification results from Statbotics. Enter the exact event name used by scouts and the 2026 event key (for example, 2026mnmi). This sends only the event key to Statbotics and replaces conflicting saved results for that event. Playoff results must be entered manually.</p>
-      <form id="online-results-form">
-        <div class="grid">
-          <label>Event name used by scouts <input name="event" maxlength="80" required></label>
-          <label>2026 event key <input name="eventKey" pattern="2026[A-Za-z0-9]+" maxlength="30" placeholder="e.g. 2026mnmi" required></label>
-        </div>
-        <button type="submit">Check qualification results online</button>
-      </form>
-      <p id="online-status" role="status" aria-live="polite"></p>
       <h3>Saved match results</h3>
       <div id="result-list"></div>
     </section>
     <section id="transfer">
       <h2>Transfer &amp; backup</h2>
       <p>Export a scouting file and send it to the captain using an offline sharing method. Import files on the captain's device; existing records are not overwritten.</p>
+      <p>This device holds data for one event at a time. Before another event, export a backup and clear this device. Do not mix files from different events or match phases with overlapping numbers.</p>
       <div class="actions">
         <button id="show-qr" type="button">Show transfer QR codes</button>
         <button id="scan-qr" type="button" class="secondary">Scan transfer QR codes</button>
         <button id="export" type="button">Export scouting file</button>
         <label class="button secondary" for="import">Import scouting files</label><input id="import" type="file" accept=".json,application/json" multiple>
         <button id="csv" type="button" class="secondary">Download CSV</button>
+        <button id="clear-data" type="button" class="secondary">Clear this device</button>
       </div>
       <div id="qr-display" hidden>
         <h3>Show to the captain</h3>

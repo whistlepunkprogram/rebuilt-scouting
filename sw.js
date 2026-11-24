@@ -1,4 +1,4 @@
-const CACHE = "rebuilt-scouting-v7";
+const CACHE = "rebuilt-scouting-v8";
 const ASSETS = ["./", "./index.html", "./style.css", "./app.js", "./core.js", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./robojacks.png", "./vendor/qrcode.js", "./vendor/jsQR.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));

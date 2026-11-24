@@ -23,6 +23,7 @@ button:hover, .button:hover { background: #0a4b6a; }
 label.button:focus-within, :focus-visible { outline: 3px solid #ec9f1e; outline-offset: 2px; }
 #message:not(:empty) { padding: .8rem; background: #e1f3ea; border-left: 4px solid #238154; }
 #message.error { background: #fff0ed; border-color: #b83d2e; }
+.clear-warning { padding: .8rem; color: #84281e; background: #fff0ed; border-left: 4px solid #b83d2e; }
 .record { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid #dce5ea; padding: .8rem 0; }
 .record p { margin: 0; overflow-wrap: anywhere; }
 .record button { flex-shrink: 0; }

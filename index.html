@@ -15,7 +15,7 @@
     <div id="message" role="status" aria-live="polite"></div>
     <p id="legacy-warning" role="status" hidden></p>
     <nav aria-label="App sections">
-      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#captain">Captain summary</a><a href="#awards">Scout awards</a><a href="#transfer">Transfer</a>
+      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#captain">Captain summary</a><a href="#awards">Scout awards</a><a href="#transfer">Transfer</a><a href="#clear-device">Clear this device</a>
     </nav>
     <section id="scout">
       <h2>Scout a match</h2>
@@ -78,14 +78,13 @@
     <section id="transfer">
       <h2>Transfer &amp; backup</h2>
       <p>Export a scouting file and send it to the captain using an offline sharing method. Import files on the captain's device; existing records are not overwritten.</p>
-      <p>This device holds data for one event at a time. Before another event, export a backup and clear this device. Do not mix files from different events or match phases with overlapping numbers.</p>
+      <p>This device holds data for one event at a time. Do not mix files from different events or match phases with overlapping numbers.</p>
       <div class="actions">
         <button id="show-qr" type="button">Show transfer QR codes</button>
         <button id="scan-qr" type="button" class="secondary">Scan transfer QR codes</button>
         <button id="export" type="button">Export scouting file</button>
         <label class="button secondary" for="import">Import scouting files</label><input id="import" type="file" accept=".json,application/json" multiple>
         <button id="csv" type="button" class="secondary">Download CSV</button>
-        <button id="clear-data" type="button" class="secondary">Clear this device</button>
       </div>
       <div id="qr-display" hidden>
         <h3>Show to the captain</h3>
@@ -101,6 +100,12 @@
         <p id="scan-status" role="status"></p>
         <button id="stop-scan" type="button" class="secondary">Stop scanning</button>
       </div>
+    </section>
+    <section id="clear-device">
+      <h2>Clear this device</h2>
+      <p class="clear-warning"><strong>WARNING! DO NOT CLEAR THE DEVICE UNTIL AFTER THE REGIONAL EVENT IS COMPLETE AND YOU'VE BEEN TOLD TO DO SO.</strong></p>
+      <p>Export and verify a backup before clearing records and match results. This cannot be undone.</p>
+      <button id="clear-data" type="button" class="secondary">Clear this device</button>
     </section>
   </main>
   <script src="vendor/qrcode.js"></script>

@@ -3,7 +3,7 @@
 body { margin: 0; line-height: 1.5; }
 .wrap { max-width: 1000px; margin: auto; padding: 1rem; }
 header { background: #142e45; color: white; }
-.team-logo { display: block; width: min(100%, 360px); height: auto; margin-bottom: .75rem; background: white; border-radius: .35rem; }
+.team-logo { display: block; width: min(100%, 360px); height: auto; margin-bottom: .75rem; }
 header h1, header p { margin: 0; }
 #offline-status { margin-top: .5rem; font-size: .9rem; }
 nav, .actions { display: flex; gap: .6rem; flex-wrap: wrap; }

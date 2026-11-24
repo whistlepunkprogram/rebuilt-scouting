@@ -10,6 +10,8 @@ Alternatively, serve this directory over HTTPS (or localhost for testing). For e
 
 On **each** device, open the deployed URL while online, wait for the offline-ready message, and keep the same browser and site address. Install it from the browser's menu if desired. Then test by turning off Wi-Fi and reloading the app before the event. On iOS, use Safari's Share > Add to Home Screen; open and verify the installed app separately.
 
+When an **Update app** button appears, save unfinished entries and select it while online. Saved records remain on the device. Older versions without this button may need all app windows and tabs closed before reopening online; do not clear site data to update.
+
 ## At an event
 
 1. Enter the scout, team, match, predicted winning alliance and observations, then save. Records stay in this browser on this device.

@@ -306,8 +306,31 @@ $("#scan-qr").addEventListener("click", async () => {
 });
 
 if ("serviceWorker" in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register("./sw.js").then(() => navigator.serviceWorker.ready).then(() => {
-    $("#offline-status").textContent = "Ready for offline use on this device.";
+  let applyingUpdate = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (applyingUpdate) window.location.reload();
+  });
+  navigator.serviceWorker.register("./sw.js").then(registration => {
+    const showUpdate = () => {
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        $("#offline-status").textContent = "An app update is ready. Save unfinished entries before updating.";
+        $("#apply-update").hidden = false;
+      }
+    };
+    $("#apply-update").addEventListener("click", () => {
+      if (!registration.waiting) return;
+      if (!confirm("Update and reload the app? Save any unfinished forms first. Saved scouting data will be kept.")) return;
+      applyingUpdate = true;
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    });
+    registration.addEventListener("updatefound", () => {
+      const installing = registration.installing;
+      if (installing) installing.addEventListener("statechange", showUpdate);
+    });
+    return navigator.serviceWorker.ready.then(() => {
+      if (!registration.waiting) $("#offline-status").textContent = "Ready for offline use on this device.";
+      showUpdate();
+    });
   }).catch(error => {
     $("#offline-status").textContent = `Offline setup failed: ${error.message}. Stay online and reload.`;
   });

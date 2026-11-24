@@ -15,7 +15,7 @@
     <div id="message" role="status" aria-live="polite"></div>
     <p id="legacy-warning" role="status" hidden></p>
     <nav aria-label="App sections">
-      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#captain">Captain summary</a><a href="#awards">Scout awards</a><a href="#transfer">Transfer</a><a href="#clear-device">Clear this device</a>
+      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#awards">Scout awards</a><a href="#captain">Captain summary</a><a href="#transfer">Transfer</a><a href="#clear-device">Clear this device</a>
     </nav>
     <section id="scout">
       <h2>Scout a match</h2>
@@ -49,12 +49,6 @@
       <p>Stored only on this device. Export backups regularly.</p>
       <div id="record-list"></div>
     </section>
-    <section id="captain">
-      <h2>Captain summary</h2>
-      <p>Grouped by team. Averages are per submitted record; duplicate observations of a match are not combined. Select a column heading to sort; select it again to reverse the order. Teleop climbs sorts by success rate.</p>
-      <div class="table-wrap"><table><thead><tr><th scope="col" aria-sort="ascending"><button type="button" class="sort-button" data-sort="team">Team <span aria-hidden="true">▲</span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="matches">Records <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="auto">Avg auto fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="teleop">Avg teleop fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="climbed">Teleop climbs <span aria-hidden="true"></span></button></th></tr></thead><tbody id="summary"></tbody></table></div>
-      <p id="summary-empty">No records yet.</p>
-    </section>
     <section id="awards">
       <h2>Scout awards</h2>
       <p>One match per scout counts. The first submitted record's prediction is used; matches without predictions or with tie results are excluded from accuracy. Ties in accuracy are broken by more judged predictions, then scout name. Match-count ties are broken by scout name.</p>
@@ -74,6 +68,12 @@
       </form>
       <h3>Saved match results</h3>
       <div id="result-list"></div>
+    </section>
+    <section id="captain">
+      <h2>Captain summary</h2>
+      <p>Grouped by team. Averages are per submitted record; duplicate observations of a match are not combined. Select a column heading to sort; select it again to reverse the order. Teleop climbs sorts by success rate.</p>
+      <div class="table-wrap"><table><thead><tr><th scope="col" aria-sort="ascending"><button type="button" class="sort-button" data-sort="team">Team <span aria-hidden="true">▲</span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="matches">Records <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="auto">Avg auto fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="teleop">Avg teleop fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="climbed">Teleop climbs <span aria-hidden="true"></span></button></th></tr></thead><tbody id="summary"></tbody></table></div>
+      <p id="summary-empty">No records yet.</p>
     </section>
     <section id="transfer">
       <h2>Transfer &amp; backup</h2>

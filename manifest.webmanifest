@@ -1,6 +1,6 @@
 {
-  "name": "REBUILT Scout",
-  "short_name": "REBUILT Scout",
+  "name": "RoboJacks Rebuild Scouting App",
+  "short_name": "RoboJacks Scout",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

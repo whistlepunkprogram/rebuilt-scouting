@@ -1,4 +1,4 @@
-# REBUILT scouting
+# RoboJacks Rebuild Scouting App
 
 An offline-first match scouting app for the 2026 FIRST Robotics Competition game REBUILT. Each scout records observations on their own device; the scout captain imports their exported files to compile results. Fuel counts are estimates, not official scores.
 

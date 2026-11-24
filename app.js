@@ -1,4 +1,4 @@
-import { validateRecord, mergeRecords, validateResult, mergeResults, scoutAwards, parseBackup, backup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
+import { validateRecord, mergeRecords, validateResult, mergeResults, onlineResults, applyOnlineResults, scoutAwards, parseBackup, backup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
 
 const $ = selector => document.querySelector(selector);
 const STORAGE = "rebuilt-scouting-records-v1";
@@ -171,6 +171,51 @@ $("#scout-form").addEventListener("submit", event => {
     event.currentTarget.elements.scout.value = scout;
     message(`Saved match ${record.match} for team ${record.team} on this device.`);
   } catch (error) { message(`Could not save record: ${error.message}`, true); }
+});
+
+$("#online-results-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = $("#online-status");
+  const button = form.querySelector("button");
+  const eventName = form.elements.event.value.trim();
+  const eventKey = form.elements.eventKey.value.trim().toLowerCase();
+  if (!storageAvailable || !eventName || !/^2026[a-z0-9]+$/.test(eventKey)) {
+    status.textContent = "Enter a valid event name and 2026 event key, and ensure local storage is available.";
+    return;
+  }
+  button.disabled = true;
+  status.textContent = "Checking Statbotics...";
+  try {
+    const fetchJson = async url => {
+      const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (!response.ok) throw new Error(`Statbotics returned HTTP ${response.status}. Check the event key and try again.`);
+      return response.json();
+    };
+    const eventData = await fetchJson(`https://api.statbotics.io/v3/event/${encodeURIComponent(eventKey)}`);
+    if (!eventData || eventData.key !== eventKey || typeof eventData.name !== "string" || !eventData.name.trim()) {
+      throw new Error("Event key not found in Statbotics.");
+    }
+    const matches = [];
+    for (let offset = 0; ; offset += 1000) {
+      const page = await fetchJson(`https://api.statbotics.io/v3/matches?event=${encodeURIComponent(eventKey)}&limit=1000&offset=${offset}`);
+      if (!Array.isArray(page) || page.length > 1000) throw new Error("Statbotics returned an invalid match list.");
+      matches.push(...page);
+      if (page.length < 1000) break;
+      if (offset >= 9000) throw new Error("Too many matches returned; no results were changed.");
+    }
+    const online = onlineResults(matches, eventKey, eventName);
+    if (online.results.length && !confirm(`Use ${online.results.length} qualification results from ${eventData.name} (${eventKey}) for "${eventName}"? This replaces conflicting saved results.`)) {
+      status.textContent = "Online update cancelled; no results were changed.";
+      return;
+    }
+    if (online.results.length) save(records, applyOnlineResults(results, online.results));
+    status.textContent = `Updated ${online.results.length} completed qualification result(s). ${online.unavailable} completed match(es) had no winner available.`;
+  } catch (error) {
+    status.textContent = `Online check failed; no results were changed: ${error.message}. You can still enter results manually.`;
+  } finally {
+    button.disabled = false;
+  }
 });
 
 function download(content, name, type) {

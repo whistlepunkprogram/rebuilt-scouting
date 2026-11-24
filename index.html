@@ -72,6 +72,16 @@
         </div>
         <button type="submit">Save result</button>
       </form>
+      <h3>Check results online</h3>
+      <p>While online, fetch completed qualification results from Statbotics. Enter the exact event name used by scouts and the 2026 event key (for example, 2026mnmi). This sends only the event key to Statbotics and replaces conflicting saved results for that event. Playoff results must be entered manually.</p>
+      <form id="online-results-form">
+        <div class="grid">
+          <label>Event name used by scouts <input name="event" maxlength="80" required></label>
+          <label>2026 event key <input name="eventKey" pattern="2026[A-Za-z0-9]+" maxlength="30" placeholder="e.g. 2026mnmi" required></label>
+        </div>
+        <button type="submit">Check qualification results online</button>
+      </form>
+      <p id="online-status" role="status" aria-live="polite"></p>
       <h3>Saved match results</h3>
       <div id="result-list"></div>
     </section>

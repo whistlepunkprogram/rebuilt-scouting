@@ -93,6 +93,29 @@ export function mergeResults(existing, incoming) {
   return merged;
 }
 
+export function onlineResults(matches, eventKey, eventName) {
+  if (!Array.isArray(matches)) throw new Error("The online match list is invalid.");
+  const winners = { red: "Red", blue: "Blue", tie: "Tie" };
+  const found = [];
+  let unavailable = 0;
+  for (const match of matches) {
+    if (!match || match.event !== eventKey || typeof match.comp_level !== "string" || typeof match.status !== "string") {
+      throw new Error("The online match list contains invalid or unexpected data.");
+    }
+    if (match.comp_level !== "qm" || match.status !== "Completed") continue;
+    if (match.result?.winner == null) { unavailable++; continue; }
+    if (!Object.hasOwn(winners, match.result.winner)) throw new Error("An online match has an unrecognized result.");
+    found.push(validateResult({ event: eventName, match: match.match_number, winner: winners[match.result.winner] }));
+  }
+  return { results: mergeResults([], found), unavailable };
+}
+
+export function applyOnlineResults(existing, incoming) {
+  const updates = mergeResults([], incoming);
+  const keys = new Set(updates.map(item => matchKey(item.event, item.match)));
+  return mergeResults(existing.filter(item => !keys.has(matchKey(item.event, item.match))), updates);
+}
+
 export function scoutAwards(records, results) {
   const winners = new Map(mergeResults([], results).map(result => [matchKey(result.event, result.match), result.winner]));
   const scouts = new Map();

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validateRecord, mergeRecords, mergeResults, scoutAwards, backup, parseBackup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
+import { validateRecord, mergeRecords, mergeResults, onlineResults, applyOnlineResults, scoutAwards, backup, parseBackup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
 
 const record = {
   id: "one", event: "Regional", scout: "Scout", notes: "Good robot", createdAt: "2026-03-01T12:00:00.000Z",
@@ -98,4 +98,21 @@ test("QR transfer includes results", () => {
   }
   assert.deepEqual(data.results, results);
   assert.equal(data.records[0].prediction, "Blue");
+});
+
+test("online qualification results replace matching manual results without changing unrelated or upcoming results", () => {
+  const matches = [
+    { event: "2026mnmi", comp_level: "qm", status: "Completed", match_number: 1, result: { winner: "blue" } },
+    { event: "2026mnmi", comp_level: "qm", status: "Completed", match_number: 2, result: { winner: "tie" } },
+    { event: "2026mnmi", comp_level: "qm", status: "Upcoming", match_number: 3, result: { winner: null } },
+    { event: "2026mnmi", comp_level: "qm", status: "Completed", match_number: 4, result: { winner: null } },
+    { event: "2026mnmi", comp_level: "sf", status: "Completed", match_number: 1, result: { winner: "red" } }
+  ];
+  const existing = [{ event: "Regional", match: 1, winner: "Red" }, { event: "Regional", match: 3, winner: "Red" }, { event: "Other", match: 1, winner: "Red" }];
+  const parsed = onlineResults(matches, "2026mnmi", "Regional");
+  assert.equal(parsed.unavailable, 1);
+  assert.deepEqual(applyOnlineResults(existing, parsed.results), [existing[1], existing[2], { event: "Regional", match: 1, winner: "Blue" }, { event: "Regional", match: 2, winner: "Tie" }]);
+  assert.equal(existing[0].winner, "Red");
+  assert.throws(() => onlineResults([{ ...matches[0], event: "2026wrong" }], "2026mnmi", "Regional"), /unexpected/);
+  assert.throws(() => onlineResults([{ ...matches[0], result: { winner: "unknown" } }], "2026mnmi", "Regional"), /unrecognized/);
 });

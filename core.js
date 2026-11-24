@@ -76,6 +76,27 @@ export function summarize(records) {
   return [...groups.values()].sort((a, b) => a.event.localeCompare(b.event) || a.team - b.team);
 }
 
+export function sortSummary(groups, category, direction) {
+  const values = {
+    event: group => group.event,
+    team: group => group.team,
+    matches: group => group.matches,
+    auto: group => group.auto / group.matches,
+    teleop: group => group.teleop / group.matches,
+    climbed: group => group.climbed / group.matches
+  };
+  if (!Object.hasOwn(values, category) || !["ascending", "descending"].includes(direction)) {
+    throw new Error("Invalid summary sort.");
+  }
+  const value = values[category];
+  return [...groups].sort((a, b) => {
+    const av = value(a), bv = value(b);
+    const comparison = typeof av === "string" ? av.localeCompare(bv) : av - bv;
+    return comparison * (direction === "ascending" ? 1 : -1) ||
+      a.event.localeCompare(b.event) || a.team - b.team;
+  });
+}
+
 export function csv(records) {
   const fields = ["event", "match", "team", "alliance", "scout", "autoFuel", "autoClimb", "teleopFuel", "teleopClimb", "defense", "issues", "notes", "createdAt", "id"];
   const cell = value => {

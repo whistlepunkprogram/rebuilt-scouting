@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validateRecord, mergeRecords, backup, parseBackup, summarize, csv, makeQrParts, acceptQrPart } from "./core.js";
+import { validateRecord, mergeRecords, backup, parseBackup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
 
 const record = {
   id: "one", event: "Regional", scout: "Scout", notes: "Good robot", createdAt: "2026-03-01T12:00:00.000Z",
@@ -29,6 +29,21 @@ test("summaries group event case and team, and CSV protects spreadsheet formulas
   const records = [record, { ...record, id: "two", event: "regional", autoFuel: 4, notes: "=1+1", teleopClimb: "None" }];
   assert.deepEqual(summarize(records), [{ event: "Regional", team: 123, matches: 2, auto: 6, teleop: 60, climbed: 1 }]);
   assert.match(csv(records), /"'=1\+1"/);
+});
+
+test("summary sorts numerical averages and climb rates rather than totals or formatted strings", () => {
+  const groups = [
+    { event: "Event", team: 2, matches: 10, auto: 20, teleop: 90, climbed: 5 },
+    { event: "Event", team: 10, matches: 2, auto: 6, teleop: 20, climbed: 2 },
+    { event: "Event", team: 3, matches: 1, auto: 0, teleop: 2, climbed: 0 }
+  ];
+  const teams = (key, direction) => sortSummary(groups, key, direction).map(group => group.team);
+  assert.deepEqual(teams("team", "ascending"), [2, 3, 10]);
+  assert.deepEqual(teams("teleop", "descending"), [10, 2, 3]);
+  assert.deepEqual(teams("auto", "ascending"), [3, 2, 10]);
+  assert.deepEqual(teams("climbed", "descending"), [10, 2, 3]);
+  assert.deepEqual(teams("matches", "ascending"), [3, 10, 2]);
+  assert.deepEqual(groups.map(group => group.team), [2, 10, 3]);
 });
 
 test("QR transfer reassembles unicode records out of order and skips repeated frames", () => {

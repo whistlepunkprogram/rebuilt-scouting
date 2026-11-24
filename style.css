@@ -30,5 +30,7 @@ label.button:focus-within, :focus-visible { outline: 3px solid #ec9f1e; outline-
 table { border-collapse: collapse; width: 100%; text-align: left; }
 th, td { padding: .6rem; border-bottom: 1px solid #dce5ea; white-space: nowrap; }
 th { font-size: .9rem; }
+.sort-button { padding: .3rem; background: transparent; color: #174e70; text-align: left; }
+.sort-button:hover { background: #e4eef3; }
 #qr-image img { display: block; width: min(100%, 360px); height: auto; margin: 1rem 0; image-rendering: pixelated; }
 #camera { display: block; width: min(100%, 480px); background: #142e45; border-radius: .4rem; }

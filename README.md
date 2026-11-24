@@ -15,7 +15,7 @@ On **each** device, open the deployed URL while online, wait for the offline-rea
 1. Enter the event, scout, team, match and observations, then save. Records stay in this browser on this device.
 2. Choose **Show transfer QR codes**. On the captain's device choose **Scan transfer QR codes**, allow camera access, and scan each code before advancing to the next. Keep both pages open until the captain sees the completed import. QR transfer requires a working camera and HTTPS (or localhost); the number of codes increases with the amount of data.
 3. Alternatively, use **Export scouting file** to download a JSON backup and transfer it via AirDrop, Bluetooth, or a USB drive. On the captain's device, use **Import scouting files** to select each file. Reimporting data skips records already present. A conflicting ID is rejected rather than overwritten.
-4. Review the team summary and download CSV for spreadsheet analysis. Export a captain backup as well. For large collections, file transfer is faster than QR.
+4. Review the team summary, selecting column headings to sort (teleop climbs sorts by success rate), and download CSV for spreadsheet analysis. Export a captain backup as well. For large collections, file transfer is faster than QR.
 
 Use the same event name on every device to group results. Export backups frequently: browser storage can be cleared or evicted, and uninstalling or clearing site data can remove records. There is no account, cloud sync, automatic transfer, or recovery after data is deleted. CSV is a reporting export, not an import format.
 

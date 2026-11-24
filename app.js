@@ -1,4 +1,4 @@
-import { validateRecord, mergeRecords, parseBackup, backup, summarize, csv, makeQrParts, acceptQrPart } from "./core.js";
+import { validateRecord, mergeRecords, parseBackup, backup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
 
 const $ = selector => document.querySelector(selector);
 const STORAGE = "rebuilt-scouting-records-v1";
@@ -9,6 +9,7 @@ let qrIndex = 0;
 let scanState = null;
 let stream = null;
 let scanSession = 0;
+let summarySort = { category: "event", direction: "ascending" };
 
 function message(text, error = false) {
   $("#message").textContent = text;
@@ -55,7 +56,7 @@ function render() {
   }
   const body = $("#summary");
   body.replaceChildren();
-  const groups = summarize(records);
+  const groups = sortSummary(summarize(records), summarySort.category, summarySort.direction);
   $("#summary-empty").hidden = groups.length > 0;
   for (const g of groups) {
     const tr = document.createElement("tr");
@@ -78,6 +79,23 @@ try {
   message(`Could not read local data: ${error.message}. Saving is disabled to protect it.`, true);
 }
 render();
+
+document.querySelectorAll(".sort-button").forEach(button => {
+  button.addEventListener("click", () => {
+    const category = button.dataset.sort;
+    const direction = category === summarySort.category
+      ? (summarySort.direction === "ascending" ? "descending" : "ascending")
+      : (category === "event" || category === "team" ? "ascending" : "descending");
+    summarySort = { category, direction };
+    document.querySelectorAll(".sort-button").forEach(heading => {
+      const active = heading === button;
+      if (active) heading.parentElement.setAttribute("aria-sort", direction);
+      else heading.parentElement.removeAttribute("aria-sort");
+      heading.querySelector("span").textContent = active ? (direction === "ascending" ? "▲" : "▼") : "";
+    });
+    render();
+  });
+});
 
 $("#scout-form").addEventListener("submit", event => {
   event.preventDefault();

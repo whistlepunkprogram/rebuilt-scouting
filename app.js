@@ -1,8 +1,10 @@
-import { validateRecord, mergeRecords, parseBackup, backup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
+import { validateRecord, mergeRecords, validateResult, mergeResults, scoutAwards, parseBackup, backup, summarize, sortSummary, csv, makeQrParts, acceptQrPart } from "./core.js";
 
 const $ = selector => document.querySelector(selector);
 const STORAGE = "rebuilt-scouting-records-v1";
+const STATE_STORAGE = "rebuilt-scouting-state-v2";
 let records = [];
+let results = [];
 let storageAvailable = false;
 let qrParts = [];
 let qrIndex = 0;
@@ -16,16 +18,18 @@ function message(text, error = false) {
   $("#message").classList.toggle("error", error);
 }
 
-function save(next) {
+function save(next, nextResults = results) {
   if (!storageAvailable) throw new Error("Local storage is unavailable. Your data was not changed.");
-  localStorage.setItem(STORAGE, JSON.stringify(next));
+  localStorage.setItem(STATE_STORAGE, JSON.stringify({ records: next, results: nextResults }));
   records = next;
+  results = nextResults;
   render();
 }
 
 function importRecords(incoming) {
-  const result = mergeRecords(records, incoming);
-  save(result.records);
+  const result = mergeRecords(records, incoming.records);
+  const mergedResults = mergeResults(results, incoming.results);
+  save(result.records, mergedResults);
   message(`Imported ${result.added} record(s); skipped ${result.skipped} already present.`);
 }
 
@@ -67,13 +71,55 @@ function render() {
     }
     body.append(tr);
   }
+  const awards = scoutAwards(records, results);
+  for (const [kind, rows] of Object.entries(awards)) {
+    const list = $(`#${kind}-awards`);
+    list.replaceChildren();
+    $(`#${kind}-empty`).hidden = rows.length > 0;
+    for (const row of rows) {
+      const item = document.createElement("li");
+      item.textContent = kind === "accuracy"
+        ? `${row.name}: ${(row.correct / row.judged * 100).toFixed(1)}% (${row.correct} / ${row.judged})`
+        : `${row.name}: ${row.matches} match${row.matches === 1 ? "" : "es"}`;
+      list.append(item);
+    }
+  }
+  const resultList = $("#result-list");
+  resultList.replaceChildren();
+  if (!results.length) resultList.textContent = "No results entered yet.";
+  for (const result of results) {
+    const row = document.createElement("div");
+    row.className = "record";
+    const text = document.createElement("p");
+    text.textContent = `${result.event} · Match ${result.match}: ${result.winner}`;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "secondary";
+    remove.textContent = "Delete";
+    remove.setAttribute("aria-label", `Delete ${result.event} match ${result.match} result`);
+    remove.addEventListener("click", () => {
+      if (!confirm("Delete this match result?")) return;
+      try { save(records, results.filter(item => item !== result)); message("Result deleted."); }
+      catch (error) { message(`Could not delete result: ${error.message}`, true); }
+    });
+    row.append(text, remove);
+    resultList.append(row);
+  }
 }
 
 try {
-  const stored = localStorage.getItem(STORAGE);
-  const parsed = stored === null ? [] : JSON.parse(stored);
-  if (!Array.isArray(parsed)) throw new Error("Stored data is not a record list.");
-  records = mergeRecords([], parsed).records;
+  const state = localStorage.getItem(STATE_STORAGE);
+  if (state !== null) {
+    const parsed = JSON.parse(state);
+    if (!Array.isArray(parsed.records) || !Array.isArray(parsed.results)) throw new Error("Stored data is invalid.");
+    records = mergeRecords([], parsed.records).records;
+    results = mergeResults([], parsed.results);
+  } else {
+    const stored = localStorage.getItem(STORAGE);
+    const parsed = stored === null ? [] : JSON.parse(stored);
+    if (!Array.isArray(parsed)) throw new Error("Stored data is not a record list.");
+    records = mergeRecords([], parsed).records;
+  }
   storageAvailable = true;
 } catch (error) {
   message(`Could not read local data: ${error.message}. Saving is disabled to protect it.`, true);
@@ -95,6 +141,20 @@ document.querySelectorAll(".sort-button").forEach(button => {
     });
     render();
   });
+});
+
+$("#result-form").addEventListener("submit", event => {
+  event.preventDefault();
+  try {
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+    const result = validateResult({ ...data, match: Number(data.match) });
+    const remaining = results.filter(item => !(item.event.trim().toLowerCase() === result.event.toLowerCase() && item.match === result.match));
+    save(records, [...remaining, result]);
+    form.reset();
+    form.elements.event.value = result.event;
+    message(`Saved result for ${result.event}, match ${result.match}.`);
+  } catch (error) { message(`Could not save result: ${error.message}`, true); }
 });
 
 $("#scout-form").addEventListener("submit", event => {
@@ -124,7 +184,7 @@ function download(content, name, type) {
 
 $("#export").addEventListener("click", () => {
   if (!storageAvailable) return message("Cannot export: local data could not be read.", true);
-  download(backup(records), "rebuilt-scouting.json", "application/json");
+  download(backup(records, results), "rebuilt-scouting.json", "application/json");
 });
 $("#csv").addEventListener("click", () => {
   if (!storageAvailable) return message("Cannot export: local data could not be read.", true);
@@ -135,7 +195,8 @@ $("#import").addEventListener("change", async event => {
     const files = [...event.target.files];
     if (!files.length) return;
     if (files.some(file => file.size > 10 * 1024 * 1024)) throw new Error("A file exceeds the 10 MB limit.");
-    const incoming = (await Promise.all(files.map(file => file.text().then(parseBackup)))).flat();
+    const filesData = await Promise.all(files.map(file => file.text().then(parseBackup)));
+    const incoming = { records: filesData.flatMap(data => data.records), results: filesData.flatMap(data => data.results) };
     importRecords(incoming);
   } catch (error) { message(`Import failed; no records were changed: ${error.message}`, true); }
   finally { event.target.value = ""; }
@@ -155,8 +216,8 @@ function showPart() {
 }
 $("#show-qr").addEventListener("click", () => {
   try {
-    if (!records.length) throw new Error("There are no records to transfer.");
-    qrParts = makeQrParts(records, crypto.randomUUID());
+    if (!records.length && !results.length) throw new Error("There is no data to transfer.");
+    qrParts = makeQrParts(records, crypto.randomUUID(), results);
     qrIndex = 0;
     showPart();
     $("#qr-display").hidden = false;
@@ -203,8 +264,8 @@ $("#scan-qr").addEventListener("click", async () => {
             const result = acceptQrPart(code.data, scanState);
             scanState = result.state;
             $("#scan-status").textContent = `Scanned ${scanState.parts.size} of ${scanState.total} codes.`;
-            if (result.records) {
-              importRecords(result.records);
+            if (result.data) {
+              importRecords(result.data);
               stopScan();
               return;
             }

@@ -12,12 +12,14 @@ On **each** device, open the deployed URL while online, wait for the offline-rea
 
 ## At an event
 
-1. Enter the event, scout, team, match and observations, then save. Records stay in this browser on this device.
+1. Enter the event, scout, team, match, predicted winning alliance and observations, then save. Records stay in this browser on this device.
 2. Choose **Show transfer QR codes**. On the captain's device choose **Scan transfer QR codes**, allow camera access, and scan each code before advancing to the next. Keep both pages open until the captain sees the completed import. QR transfer requires a working camera and HTTPS (or localhost); the number of codes increases with the amount of data.
 3. Alternatively, use **Export scouting file** to download a JSON backup and transfer it via AirDrop, Bluetooth, or a USB drive. On the captain's device, use **Import scouting files** to select each file. Reimporting data skips records already present. A conflicting ID is rejected rather than overwritten.
-4. Review the team summary, selecting column headings to sort (teleop climbs sorts by success rate), and download CSV for spreadsheet analysis. Export a captain backup as well. For large collections, file transfer is faster than QR.
+4. Review the team summary, selecting column headings to sort (teleop climbs sorts by success rate), and download CSV for spreadsheet analysis. Under **SCOUT AWARDS**, enter the actual match results to calculate the top two prediction accuracies; the other leaderboard shows the top two scouts by matches scouted. Export a captain backup as well. For large collections, file transfer is faster than QR.
 
 Use the same event name on every device to group results. Export backups frequently: browser storage can be cleared or evicted, and uninstalling or clearing site data can remove records. There is no account, cloud sync, automatic transfer, or recovery after data is deleted. CSV is a reporting export, not an import format.
+
+Awards group scout names and event names case-insensitively and count each event/match once per scout. When there are multiple submissions for a scout and match, the earliest saved record (by device timestamp, then record ID) supplies the prediction. Set device clocks correctly. A missing prediction, unknown result, or tied match is excluded from accuracy, not counted as incorrect. The highest percentage wins; ties are broken by number of judged predictions and then name. Match-count ties are broken by name. Existing records without predictions still count as scouted matches. Entering a result again updates it; conflicting results in imported backups are rejected. Backups and QR transfers include results; update every device before exchanging new-format files or QR codes. Older backups remain importable.
 
 Fuel observations are approximate counts attributed to the scouted robot, not official alliance scores; only count fuel observed entering an active hub. Tower results are observed outcomes, not calculated official scores. Rules: [2026 game manual](https://firstfrc.blob.core.windows.net/frc2026/Manual/2026GameManual.pdf).
 

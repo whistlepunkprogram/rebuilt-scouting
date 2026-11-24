@@ -14,7 +14,7 @@
   <main class="wrap">
     <div id="message" role="status" aria-live="polite"></div>
     <nav aria-label="App sections">
-      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#captain">Captain summary</a><a href="#transfer">Transfer</a>
+      <a href="#scout">Scout a match</a><a href="#records">Records</a><a href="#captain">Captain summary</a><a href="#awards">SCOUT AWARDS</a><a href="#transfer">Transfer</a>
     </nav>
     <section id="scout">
       <h2>Scout a match</h2>
@@ -26,6 +26,7 @@
           <label>Team number <input name="team" type="number" inputmode="numeric" min="1" max="99999" required></label>
           <label>Match number <input name="match" type="number" inputmode="numeric" min="1" max="99999" required></label>
           <label>Alliance <select name="alliance"><option>Red</option><option>Blue</option></select></label>
+          <label>Which alliance do you think will win? <select name="prediction" required><option value="">Select an alliance</option><option>Red</option><option>Blue</option></select></label>
         </div>
         <h3>Autonomous</h3>
         <div class="grid">
@@ -53,6 +54,26 @@
       <p>Grouped by event and team. Averages are per submitted record; duplicate observations of a match are not combined. Select a column heading to sort; select it again to reverse the order. Teleop climbs sorts by success rate.</p>
       <div class="table-wrap"><table><thead><tr><th scope="col" aria-sort="ascending"><button type="button" class="sort-button" data-sort="event">Event <span aria-hidden="true">▲</span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="team">Team <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="matches">Records <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="auto">Avg auto fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="teleop">Avg teleop fuel <span aria-hidden="true"></span></button></th><th scope="col"><button type="button" class="sort-button" data-sort="climbed">Teleop climbs <span aria-hidden="true"></span></button></th></tr></thead><tbody id="summary"></tbody></table></div>
       <p id="summary-empty">No records yet.</p>
+    </section>
+    <section id="awards">
+      <h2>SCOUT AWARDS</h2>
+      <p>One match per scout and event counts. The first submitted record's prediction is used; matches without predictions or with tie results are excluded from accuracy. Ties in accuracy are broken by more judged predictions, then scout name. Match-count ties are broken by scout name.</p>
+      <div class="grid">
+        <div><h3>Top prediction accuracy</h3><ol id="accuracy-awards"></ol><p id="accuracy-empty">No judged predictions yet.</p></div>
+        <div><h3>Most matches scouted</h3><ol id="participation-awards"></ol><p id="participation-empty">No matches scouted yet.</p></div>
+      </div>
+      <h3>Enter match result</h3>
+      <p>On the captain's device, enter the final result using the same event name and match number used by scouts. Saving again updates a result.</p>
+      <form id="result-form">
+        <div class="grid">
+          <label>Event name <input name="event" maxlength="80" required></label>
+          <label>Match number <input name="match" type="number" inputmode="numeric" min="1" max="99999" required></label>
+          <label>Result <select name="winner" required><option value="">Select result</option><option>Red</option><option>Blue</option><option>Tie</option></select></label>
+        </div>
+        <button type="submit">Save result</button>
+      </form>
+      <h3>Saved match results</h3>
+      <div id="result-list"></div>
     </section>
     <section id="transfer">
       <h2>Transfer &amp; backup</h2>
